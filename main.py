@@ -1,3 +1,4 @@
+from analyzer.llm import analyze_contract
 import sys
 
 def load_contract(path):
@@ -12,8 +13,12 @@ def main():
     contract_path = sys.argv[1]
     code = load_contract(contract_path)
 
-    print("\n=== CONTRACT LOADED ===\n")
-    print(code[:500])  # preview first 500 chars
+    print("\n=== ANALYZING CONTRACT ===\n")
+
+    result = analyze_contract(code)
+
+    print("\n=== ANALYSIS RESULT ===\n")
+    print(result)
 
 if __name__ == "__main__":
     main()
