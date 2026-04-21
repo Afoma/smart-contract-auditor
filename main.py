@@ -17,7 +17,10 @@ def main():
     code = load_contract(sys.argv[1])
 
     heuristic_results = run_heuristics(code)
-    llm_results = analyze_contract(code)
+    llm_results = analyze_contract(
+        code,
+        heuristic_findings= heuristic_results
+        )
 
     report = generate_report(heuristic_results, llm_results)
 
