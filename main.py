@@ -1,5 +1,7 @@
 from analyzer.llm import analyze_contract
 from analyzer.heuristics import run_heuristics
+from analyzer.report import generate_report
+
 import sys
 import json
 
@@ -14,14 +16,13 @@ def main():
 
     code = load_contract(sys.argv[1])
 
-    print("\n=== HEURISTIC ANALYSIS ===\n")
-    heuristic_findings = run_heuristics(code)
-    print(json.dumps(heuristic_findings, indent=2))
+    heuristic_results = run_heuristics(code)
+    llm_results = analyze_contract(code)
 
-    print("\n=== LLM ANALYSIS ===\n")
-    llm_findings = analyze_contract(code)
+    report = generate_report(heuristic_results, llm_results)
 
-    print(json.dumps(llm_findings, indent=2))
+    print("\n=== FINAL SECURITY REPORT ===\n")
+    print(json.dumps(report, indent=2))
 
 if __name__ == "__main__":
     main()
