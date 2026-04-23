@@ -5,7 +5,13 @@ def normalize_issue(issue):
         "explanation": issue.get("explanation", ""),
         "location": issue.get("location", "Not specified"),
         "fix": issue.get("fix", ""),
-        "exploit_scenario": issue.get("exploit_scenario", [])
+        "exploit": issue.get("exploit", {
+            "possible": False,
+            "preconditions": [],
+            "steps": [],
+            "impact": "",
+            "notes": ""
+        })
     }
 
 
@@ -22,21 +28,31 @@ def deduplicate_issues(issues):
     return unique
 
 
-# 🔥 BONUS: exploit validation logic
 def validate_issues(issues):
     validated = []
 
     for issue in issues:
-        scenario = issue.get("exploit_scenario", [])
+        exploit = issue.get("exploit", {})
 
-        # Only downgrade HIGH → MEDIUM if no exploit scenario
-        if not scenario and issue["severity"] == "high":
+        possible = exploit.get("possible", False)
+        steps = exploit.get("steps", [])
+        preconditions = exploit.get("preconditions", [])
+
+        # If exploit not possible, downgrade heavily
+        if not possible:
+            issue["severity"] = "low"
+
+        # If no real steps, downgrade
+        elif len(steps) < 2:
+            issue["severity"] = "medium"
+
+        # If no preconditions, weak reasoning
+        elif not preconditions:
             issue["severity"] = "medium"
 
         validated.append(issue)
 
     return validated
-
 def calculate_summary(issues):
     summary = {"high": 0, "medium": 0, "low": 0}
 
@@ -61,7 +77,7 @@ def generate_report(heuristic_results, llm_results):
 
     combined = deduplicate_issues(combined)
 
-    # 🔥 apply validation step here
+    # apply validation step here
     combined = validate_issues(combined)
 
     summary = calculate_summary(combined)

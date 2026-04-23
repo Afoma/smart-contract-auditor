@@ -30,6 +30,8 @@ IMPORTANT RULES:
 
 Return ONLY valid JSON in this format:
 
+Return ONLY valid JSON in this format:
+
 [
   {{
     "name": "...",
@@ -37,15 +39,22 @@ Return ONLY valid JSON in this format:
     "explanation": "...",
     "location": "...",
     "fix": "...",
-    "exploit_scenario": ["step-by-step attack path"],
+    "exploit": {{
+        "possible": true/false,
+        "preconditions": ["what must be true before attack"],
+        "steps": ["step-by-step attacker actions"],
+        "impact": "what attacker gains",
+        "notes": "edge cases or uncertainty"
+    }},
     "source": "heuristic | llm"
   }}
 ]
 
-Rules for exploit_scenario:
-- Only include if realistically exploitable
-- Must be step-by-step attacker actions
-- If not exploitable, return []
+Rules for exploit:
+- Set "possible" to false if exploit is unrealistic
+- Preconditions must be concrete (not vague)
+- Steps must reflect actual EVM behavior
+- If steps are unclear or speculative → set possible=false
 
 Heuristic Findings:
 {heuristic_context}

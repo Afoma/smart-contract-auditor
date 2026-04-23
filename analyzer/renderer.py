@@ -31,10 +31,28 @@ def format_report(report):
         lines.append(issue.get("fix", ""))
         lines.append("")
 
-        if issue.get("exploit_scenario"):
-            lines.append("Exploit Scenario:")
-            for step in issue["exploit_scenario"]:
-                lines.append(f"- {step}")
+        # ✅ FIX: exploit block INSIDE the loop
+        exploit = issue.get("exploit", {})
+
+        if exploit.get("possible"):
+            lines.append("Exploit Analysis:")
+
+            if exploit.get("preconditions"):
+                lines.append("Preconditions:")
+                for p in exploit["preconditions"]:
+                    lines.append(f"- {p}")
+
+            if exploit.get("steps"):
+                lines.append("Attack Steps:")
+                for step in exploit["steps"]:
+                    lines.append(f"- {step}")
+
+            if exploit.get("impact"):
+                lines.append(f"Impact: {exploit['impact']}")
+
+            if exploit.get("notes"):
+                lines.append(f"Notes: {exploit['notes']}")
+
             lines.append("")
 
         lines.append("-" * 50)
