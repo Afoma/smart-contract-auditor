@@ -160,4 +160,4 @@ Author
 
 Built as a portfolio project focused on AI-assisted security analysis and hybrid reasoning systems for smart contract vulnerability detection.
 
-python main.py path/to/contract.sol
+python main.py contracts/unsafe_withdraw.sol
