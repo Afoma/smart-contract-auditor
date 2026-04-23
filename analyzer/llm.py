@@ -1,11 +1,17 @@
+import os
 import json
+from openai import OpenAI
+from dotenv import load_dotenv
+
+load_dotenv()
+
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 def analyze_contract(code, heuristic_findings=None):
-
     heuristic_context = json.dumps(heuristic_findings or [], indent=2)
 
     prompt = f"""
-You are a smart contract security auditor.
+You are a strict smart contract security auditor.
 
 You are given:
 1. Solidity contract code
@@ -31,9 +37,15 @@ Return ONLY valid JSON in this format:
     "explanation": "...",
     "location": "...",
     "fix": "...",
+    "exploit_scenario": ["step-by-step attack path"],
     "source": "heuristic | llm"
   }}
 ]
+
+Rules for exploit_scenario:
+- Only include if realistically exploitable
+- Must be step-by-step attacker actions
+- If not exploitable, return []
 
 Heuristic Findings:
 {heuristic_context}
@@ -52,6 +64,10 @@ Contract:
     )
 
     raw = response.choices[0].message.content
+
+    # Handle markdown-wrapped JSON
+    if raw.startswith("```"):
+        raw = raw.strip("```json").strip("```").strip()
 
     try:
         return json.loads(raw)

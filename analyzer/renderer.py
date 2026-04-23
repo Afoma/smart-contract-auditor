@@ -4,13 +4,11 @@ def format_report(report):
 
     lines = []
 
-    # Header
     lines.append("=" * 50)
     lines.append("SMART CONTRACT SECURITY AUDIT REPORT")
     lines.append("=" * 50)
     lines.append("")
 
-    # Summary
     lines.append("SUMMARY")
     lines.append(f"- High: {summary.get('high', 0)}")
     lines.append(f"- Medium: {summary.get('medium', 0)}")
@@ -18,7 +16,6 @@ def format_report(report):
     lines.append(f"- Total: {summary.get('total_issues', 0)}")
     lines.append("")
 
-    # Issues
     if not issues:
         lines.append("No vulnerabilities detected.")
         return "\n".join(lines)
@@ -33,6 +30,13 @@ def format_report(report):
         lines.append("Fix:")
         lines.append(issue.get("fix", ""))
         lines.append("")
+
+        if issue.get("exploit_scenario"):
+            lines.append("Exploit Scenario:")
+            for step in issue["exploit_scenario"]:
+                lines.append(f"- {step}")
+            lines.append("")
+
         lines.append("-" * 50)
 
     return "\n".join(lines)
