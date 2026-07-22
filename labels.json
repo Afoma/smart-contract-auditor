@@ -1,0 +1,69 @@
+{
+  "V01_Reentrancy": [
+    "Potential Reentrancy"
+  ],
+
+  "V02_Reentrancy": [
+    "Potential Reentrancy"
+  ],
+
+  "V03_AccessControl": [
+    "Missing Access Control"
+  ],
+
+  "V04_AccessControl": [
+    "Missing Access Control"
+  ],
+
+  "V05_TxOrigin": [
+    "tx.origin Authentication"
+  ],
+
+  "V06_TxOrigin": [
+    "tx.origin Authentication"
+  ],
+
+  "V07_Delegatecall": [
+    "Delegatecall Usage"
+  ],
+
+  "V08_Delegatecall": [
+    "Delegatecall Usage"
+  ],
+
+  "V09_UncheckedCall": [
+    "Unchecked Low-Level Call"
+  ],
+
+  "V10_UncheckedCall": [
+    "Unchecked Low-Level Call"
+  ],
+
+  "V11_Timestamp": [
+    "Timestamp Dependence"
+  ],
+
+  "V12_Timestamp": [
+    "Timestamp Dependence"
+  ],
+
+  "V13_WeakRandomness": [
+    "Weak Randomness",
+    "Timestamp Dependence",
+    "Block Number Dependence"
+  ],
+
+  "V14_Selfdestruct": [
+    "Selfdestruct Usage"
+  ],
+
+  "V15_InlineAssembly": [
+    "Inline Assembly"
+  ],
+
+  "S01_SecureVault": [],
+  "S02_SecureWallet": [],
+  "S03_SecureLottery": [],
+  "S04_SecureStorage": [],
+  "S05_SecureBank": []
+}
