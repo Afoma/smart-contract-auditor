@@ -1,7 +1,0 @@
-pragma solidity ^0.8.19;
-
-contract Test {
-    function withdraw() public {
-        payable(msg.sender).transfer(address(this).balance);
-    }
-}
