@@ -1,84 +1,186 @@
 import os
 import json
-from openai import OpenAI
+
 from dotenv import load_dotenv
+from openai import OpenAI
 
 load_dotenv()
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+client = OpenAI(
+    api_key=os.getenv("OPENAI_API_KEY")
+)
 
-def analyze_contract(code, heuristic_findings=None):
-    heuristic_context = json.dumps(heuristic_findings or [], indent=2)
+
+def extract_json(text):
+    """
+    Attempts to recover JSON from model output.
+    Handles markdown fences and extra text.
+    """
+
+    if not text:
+        return None
+
+    text = text.strip()
+
+    if text.startswith("```json"):
+        text = text.replace("```json", "", 1)
+
+    if text.startswith("```"):
+        text = text.replace("```", "", 1)
+
+    if text.endswith("```"):
+        text = text[:-3]
+
+    text = text.strip()
+
+    start = text.find("[")
+    end = text.rfind("]")
+
+    if start != -1 and end != -1:
+        text = text[start:end + 1]
+
+    return text
+
+
+def analyze_contract(
+    code,
+    heuristic_findings=None
+):
+
+    heuristic_context = json.dumps(
+        heuristic_findings or [],
+        indent=2
+    )
 
     prompt = f"""
-You are a strict smart contract security auditor.
+You are an expert Solidity smart contract auditor.
 
 You are given:
-1. Solidity contract code
-2. Heuristic findings from a static analyzer
 
-Your task:
-- Validate heuristic findings (keep or reject them)
-- Add missing vulnerabilities ONLY if strongly justified
-- Remove false positives
-- Improve explanations and fixes
+1. Solidity source code
+2. Findings from a static analyzer
 
-IMPORTANT RULES:
-- Do NOT invent issues without evidence in code
-- Prefer precision over completeness
-- Be strict about severity classification
+Your responsibilities:
 
-Return ONLY valid JSON in this format:
+- Validate heuristic findings
+- Reject false positives
+- Add missing vulnerabilities only when strongly justified
+- Do NOT invent issues
+- Do NOT report informational observations
+- Do NOT report style concerns
+- Do NOT report gas optimizations
+- Only report actual security vulnerabilities
 
-Return ONLY valid JSON in this format:
+Severity rules:
+
+high:
+- loss of funds
+- privilege escalation
+- contract takeover
+
+medium:
+- meaningful security weakness
+- exploitable under realistic conditions
+
+low:
+- limited impact
+- difficult exploitation
+
+Return ONLY valid JSON.
+
+Schema:
 
 [
   {{
     "name": "...",
-    "severity": "low | medium | high",
+    "severity": "low|medium|high",
     "explanation": "...",
     "location": "...",
     "fix": "...",
     "exploit": {{
-        "possible": true/false,
-        "preconditions": ["what must be true before attack"],
-        "steps": ["step-by-step attacker actions"],
-        "impact": "what attacker gains",
-        "notes": "edge cases or uncertainty"
+      "possible": true,
+      "preconditions": [],
+      "steps": [],
+      "impact": "...",
+      "notes": "..."
     }},
-    "source": "heuristic | llm"
+    "source": "heuristic|llm"
   }}
 ]
 
-Rules for exploit:
-- Set "possible" to false if exploit is unrealistic
-- Preconditions must be concrete (not vague)
-- Steps must reflect actual EVM behavior
-- If steps are unclear or speculative → set possible=false
+If no vulnerabilities exist:
+
+[]
 
 Heuristic Findings:
+
 {heuristic_context}
 
 Contract:
+
 {code}
 """
 
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {"role": "system", "content": "You are a strict smart contract security reviewer."},
-            {"role": "user", "content": prompt}
-        ],
-        temperature=0.1
-    )
-
-    raw = response.choices[0].message.content
-
-    # Handle markdown-wrapped JSON
-    if raw.startswith("```"):
-        raw = raw.strip("```json").strip("```").strip()
-
     try:
-        return json.loads(raw)
-    except:
-        return [{"error": "invalid_json", "raw": raw}]
+
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            temperature=0.0,
+            messages=[
+                {
+                    "role": "system",
+                    "content":
+                    (
+                        "You are a strict smart contract "
+                        "security reviewer."
+                    )
+                },
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ]
+        )
+
+        raw = response.choices[0].message.content
+
+        raw = extract_json(raw)
+
+        if not raw:
+
+            return [
+                {
+                    "error": "empty_response"
+                }
+            ]
+
+        try:
+
+            parsed = json.loads(raw)
+
+            if isinstance(parsed, list):
+                return parsed
+
+            return [
+                {
+                    "error": "unexpected_format"
+                }
+            ]
+
+        except json.JSONDecodeError:
+
+            return [
+                {
+                    "error": "invalid_json",
+                    "raw": raw
+                }
+            ]
+
+    except Exception as e:
+
+        return [
+            {
+                "error": "llm_failure",
+                "message": str(e)
+            }
+        ]
