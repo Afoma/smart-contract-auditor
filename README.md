@@ -318,6 +318,4 @@ Built as a portfolio project focused on:
 - Static Analysis
 - AI-Assisted Security Tooling
 - Vulnerability Research
-- Hybrid Reasoning Systems
-
-
+- Hybrid Reasoning Systems 
