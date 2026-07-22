@@ -1,163 +1,323 @@
-# Smart Contract Vulnerability Auditor (AI + Heuristics Hybrid)
+# Smart Contract Vulnerability Auditor 
 
-A CLI-based smart contract security analysis tool that combines deterministic static heuristics with LLM-based reasoning to identify, validate, and explain vulnerabilities in Solidity contracts.
+A hybrid Solidity security analysis tool that combines deterministic static-analysis heuristics with LLM-assisted validation to identify, explain, and prioritize smart contract vulnerabilities.
+
+The project was built to explore how traditional static analysis and AI-assisted reasoning can be combined to improve audit quality while reducing false positives and hallucinated findings.
 
 ---
 
 ## Overview
 
-This tool analyzes Solidity smart contracts and produces structured security audit reports. It is designed to improve reliability over pure LLM-based analysis by grounding model outputs in heuristic detection signals and applying post-generation validation.
+This tool analyzes Solidity smart contracts and generates structured security reports.
 
-The system focuses on:
-- Vulnerability detection (e.g., reentrancy, missing access control)
-- Explainability (simple, structured reasoning)
-- Exploit feasibility modeling
-- Reduction of LLM hallucinations via heuristic grounding
+Unlike purely LLM-based approaches, findings are first generated using deterministic heuristics and then reviewed by an LLM that:
+
+- Validates heuristic findings
+- Rejects weak or unsupported detections
+- Adds strongly justified vulnerabilities
+- Generates exploitability analysis
+- Suggests remediation guidance
+
+The result is a hybrid auditing workflow that combines the consistency of static analysis with the contextual reasoning capabilities of modern language models.
 
 ---
 
-## Key Features
+## Features
 
 ### Hybrid Analysis Pipeline
-Combines:
-- Rule-based heuristic detection (fast, deterministic signals)
-- LLM-based reasoning (contextual vulnerability analysis)
-- Validation layer to filter weak or non-feasible findings
+The analyzer combines:
+- Rule-based heuristic detection
+- LLM-assisted vulnerability validation
+- Exploitability assessment
+- Report normalization and scoring
 
 ### Vulnerability Detection
-Currently detects:
-- Potential reentrancy patterns
-- Missing access control in public/external functions
+Current heuristic coverage includes:
+- Reentrancy
+- Missing Access Control
+- tx.origin Authentication
+- Delegatecall Usage
+- Unchecked Low-Level Calls
+- Timestamp Dependence
+- Block Number Dependence
+- Weak Randomness
+- Selfdestruct Usage
+- Inline Assembly Detection
 
-### Exploit Feasibility Modeling
-Each vulnerability includes:
-- Preconditions required for exploitation
-- Step-by-step attack scenario (when feasible)
-- Expected attacker impact
-- Confidence filtering for realism
+### Exploitability Analysis
+Each validated issue may include:
+- Exploit feasibility
+- Preconditions
+- Attack steps
+- Expected impact
+- Remediation guidance
 
-### Structured Audit Output
-Generates a CLI-formatted security report including:
-- Severity breakdown (High / Medium / Low)
-- Normalized vulnerability list
-- Exploit analysis (when applicable)
-- Suggested fixes
+### Structured Reporting
+Generated reports contain:
+- Severity summary
+- Vulnerability details
+- Exploit analysis
+- Recommended fixes
+- Runtime statistics
+
+### Benchmark Framework
+The project includes an automated benchmarking pipeline capable of:
+- Auditing multiple contracts
+- Saving JSON reports
+- Comparing findings against labeled ground truth
+- Computing evaluation metrics
 
 ---
 
 ## Architecture
 Solidity Contract
 ->
-Heuristic Analyzer (rule-based detection)
+Heuristic Analysis Layer
 ->
-LLM Reasoning Layer (grounded by heuristics)
+LLM Validation Layer
 ->
-Validation Layer (filters weak or unrealistic findings)
+Finding Normalization
 ->
-Report Generator (normalization + scoring)
+Validation & Deduplication
 ->
-CLI Renderer (human-readable audit output)
+Report Generation
+->
+CLI Output / JSON Output
 
 
 ---
 
-## Design Goals
+## Project Structure
 
-- **Grounded LLM reasoning**: Model outputs are constrained using heuristic signals
-- **Reduced hallucinations**: Vulnerabilities without realistic exploit paths are downgraded
-- **Security-first design**: Focus on exploitability, not just detection
-- **Explainability**: Every issue includes reasoning and remediation guidance
+smart-contract-auditor/
 
----
+|-> analyzer/
+│ |-> __init__.py
+│ |-> heuristics.py
+│ |-> llm.py
+│ |-> parser.py
+│ |-> renderer.py
+│ |-> report.py
+│
+|-> contracts/
+|
+|-> results/
+|
+|-> benchmark.py
+|-> evaluate.py
+|-> labels.json
+|-> main.py
+|
+|-> README.md
+|-> .env
+|-> .gitignore
 
-## Tech Stack
-
-- Python 3.10+
-- OpenAI API (LLM reasoning layer)
-- Regex-based heuristic analysis
-- CLI-based execution (no frontend dependencies)
 
 ---
 
 ## Installation
 
-*** bash
-
+Clone the repository:
 
 git clone https://github.com/your-username/smart-contract-auditor.git
 cd smart-contract-auditor
+
+Create and activate a virtual environment:
+
 python -m venv venv
-source venv/bin/activate  # (Windows: venv\Scripts\activate)
+
+# Linux / macOS
+source venv/bin/activate
+
+# Windows
+venv\Scripts\activate
+
+Install dependencies:
+
 pip install -r requirements.txt
 
 Create a .env file:
 
 OPENAI_API_KEY=your_api_key
 
-Usage
 
-Run analysis on a Solidity file:
+---
 
-Example Output
+## Usage
+
+Analyze a single contract:
+
+python main.py contracts/V01_Reentrancy.sol
+
+
+---
+
+## Example Output
+
+==================================================
 SMART CONTRACT SECURITY AUDIT REPORT
-=====================================
+==================================================
 
 SUMMARY
-- High: 1
-- Medium: 2
-- Low: 1
-- Total: 4
+
+High: 1
+Medium: 1
+Low: 0
+Total: 2
 
 ISSUE 1: Potential Reentrancy (HIGH)
-Location: withdraw()
+
+Location:
+withdraw()
 
 Explanation:
-External call may allow reentrancy before state update.
+External value transfer detected before state update.
 
 Exploit Analysis:
+
 Preconditions:
-- Attacker can deploy a malicious contract
-- Contract holds sufficient balance
+- Contract contains user balances
+- Contract holds funds
 
 Attack Steps:
-- Attacker calls withdraw()
+- Attacker deposits funds
+- Attacker initiates withdrawal
 - Fallback function re-enters contract
-- Balance is drained before state update
+- Funds are repeatedly withdrawn
 
 Impact:
-Full drainage of contract funds
+Potential loss of contract funds
 
 Fix:
-Use checks-effects-interactions pattern or ReentrancyGuard
-Limitations
-Heuristic coverage is intentionally minimal and pattern-based
-LLM may still produce uncertain or incomplete exploit reasoning
-No full AST parsing or symbolic execution is currently implemented
-Designed for educational and research purposes, not production auditing
-Motivation
+Use Checks-Effects-Interactions or ReentrancyGuard.
 
-Smart contract auditing tools often suffer from a tradeoff between:
 
-static analyzers (precise but shallow)
-LLM-based tools (flexible but unreliable)
+---
 
-This project explores a hybrid approach where:
+## Benchmarking
 
-heuristics provide grounding signals
-LLMs provide reasoning and explanation
-validation logic enforces exploit realism
-Future Improvements
-AST-based Solidity parsing (e.g. Slither-style analysis)
-Function-level slicing for improved context windows
-Exploit simulation scoring system
-False-positive reduction via confidence scoring
-Integration with CI pipelines for automated auditing
-Disclaimer
+Run all benchmark contracts:
 
-This tool is intended for educational and research purposes only. It is not a replacement for professional security audits.
+python benchmark.py
 
-Author
+This generates JSON reports inside:
 
-Built as a portfolio project focused on AI-assisted security analysis and hybrid reasoning systems for smart contract vulnerability detection.
+results/
 
-python main.py contracts/unsafe_withdraw.sol
+
+---
+
+## Evaluation
+
+Compute benchmark statistics:
+
+python evaluate.py
+
+Example output:
+
+============================================================
+EVALUATION RESULTS
+============================================================
+
+Contracts Tested: 20
+
+True Positives : 17
+False Positives: 4
+False Negatives: 2
+
+Precision: 80.95%
+Recall: 89.47%
+F1 Score: 85.00%
+============================================================
+
+
+---
+
+## Design Goals
+
+### Grounded AI Reasoning
+
+The LLM is not used as a standalone auditor.
+
+Heuristic findings provide grounding signals that guide and constrain model reasoning.
+
+### Reduced Hallucinations
+
+The validation layer attempts to suppress unsupported findings and downgrade weak exploitability claims.
+
+### Explainability
+
+Every finding includes:
+
+- Explanation
+- Severity
+- Location
+- Remediation guidance
+- Exploitability assessment
+
+### Reproducibility
+
+The benchmarking framework enables repeatable evaluation using labeled contracts and measurable metrics.
+
+
+---
+
+## Current Limitations
+- Regex-based analysis rather than AST parsing
+- No symbolic execution
+- No data-flow analysis
+- No control-flow graph generation
+- No automated exploit generation
+- LLM output quality depends on model capability
+
+This tool is intended as a research and portfolio project rather than a production-grade auditing platform.
+
+
+---
+
+## Future Improvements
+
+- Solidity AST parsing
+- Function-level analysis
+- Data-flow tracking
+- Symbolic execution
+- Confidence scoring
+- CI/CD integration
+- Comparative evaluation against Slither and Mythril
+- Expanded benchmark datasets
+
+
+---
+
+## Motivation
+
+Traditional smart contract security tools often fall into two categories:
+
+- Static analyzers that are fast and deterministic but limited in contextual reasoning
+- LLM-based systems that are flexible but may hallucinate findings
+
+This project explores a hybrid approach that combines the strengths of both methods.
+
+
+---
+
+## Disclaimer
+
+This software is intended for educational, research, and portfolio purposes only.
+
+It should not be relied upon as a substitute for professional smart contract security audits.
+
+
+---
+
+## Author
+
+Built as a portfolio project focused on:
+
+- Smart Contract Security
+- Static Analysis
+- AI-Assisted Security Tooling
+- Vulnerability Research
+- Hybrid Reasoning Systems
+
+
